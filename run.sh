@@ -1,6 +1,6 @@
 
 num_env=1
-num_updates=100
+num_updates=5
 
 gpu_id=3
 fattree_K=4

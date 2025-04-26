@@ -78,11 +78,11 @@ class LearningCallback:
 
 arg_parser = argparse.ArgumentParser()
 arg_parser.add_argument('--gpu-id', type=int, default=1)
-arg_parser.add_argument('--ckpt-dir', type=str, required=True)
+arg_parser.add_argument('--ckpt-dir', type=str, default="build/ckpts")
 arg_parser.add_argument('--restore', type=int)
 
-arg_parser.add_argument('--num-worlds', type=int, required=True)
-arg_parser.add_argument('--num-updates', type=int, required=True)
+arg_parser.add_argument('--num-worlds', type=int, default=1)
+arg_parser.add_argument('--num-updates', type=int, default=5)
 arg_parser.add_argument('--steps-per-update', type=int, default=40)
 arg_parser.add_argument('--num-bptt-chunks', type=int, default=8)
 
@@ -101,9 +101,9 @@ arg_parser.add_argument('--profile-report', action='store_true')
 
 
 # arg_parser.add_argument('--enable_gpu_sim', type=str, required=True, help='Enable GPU simulation (e.g., "cpu" or "gpu")')
-arg_parser.add_argument('--gpu_id', type=int, required=True, help='GPU ID')
-arg_parser.add_argument('--fattree_K', type=int, required=True, help='Fattree K value')
-arg_parser.add_argument('--cc_method', type=int, required=True, help='Congestion control method')
+arg_parser.add_argument('--gpu_id', type=int, default=3, help='GPU ID')
+arg_parser.add_argument('--fattree_K', type=int, default=4, help='Fattree K value')
+arg_parser.add_argument('--cc_method', type=int, default=1, help='Congestion control method')
 
 
 

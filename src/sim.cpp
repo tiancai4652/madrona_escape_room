@@ -17,7 +17,7 @@ using namespace madrona::phys;
 
 #define SYS_CHECK true
 
-#define ENABLE_TEST true
+#define ENABLE_TEST false
 
 namespace RenderingSystem = madrona::render::RenderingSystem;
 
@@ -903,6 +903,7 @@ inline int checkFlowFinish(Engine &ctx, uint32_t net_npu_id, SysFlow flows_finis
         flows_finish[i].comm_src = flow_event.src;
         flows_finish[i].comm_dst = flow_event.dst;
         flows_finish[i].durationMicros = flow_event.stop_time - flow_event.start_time;
+        flows_finish[i].state=TaskState::FINISH;
         printf("check flow finish: flow id %d: %d->%d %d, \n",flows_finish[i].id, flows_finish[i].comm_src,flows_finish[i].comm_dst,flows_finish[i].comm_size);
     }
 
@@ -2350,6 +2351,11 @@ inline void flow_receive(Engine &ctx, FlowID &_flow_id, PktBuf &_recv_queue,
             Entity npuNode = ctx.makeEntity<NpuNode>();
             ctx.get<NpuID>(npuNode).value = i;
             int nodeCount = parseChakraNodes(chakra_nodes_data, i, ctx.get<ChakraNodes>(npuNode).nodes);
+            if(nodeCount==0)
+            {
+                ctx.destroyEntity(npuNode);
+                return;
+            }
             ctx.get<HardwareResource>(npuNode) = HardwareResource();
             ctx.get<ProcessingCompTask>(npuNode) = ProcessingCompTask();
             ctx.get<ProcessingCommTasks>(npuNode) = ProcessingCommTasks();
@@ -2445,7 +2451,7 @@ inline void flow_receive(Engine &ctx, FlowID &_flow_id, PktBuf &_recv_queue,
                     Entity process_e = ctx.makeEntity<ProcessComm_E>();
                     ctx.get<NpuID>(process_e).value = id.value;
                     ctx.get<NodeID>(process_e).value = node.id;
-                    uint32_t flow_id = processingCommTasks.getTotalFlowCount() + 1;
+                    uint32_t flow_id = processingCommTasks.getTotalFlowCount();
                     ctx.get<TaskFlows>(process_e).flows[0] = SysFlow();
                     ctx.get<TaskFlows>(process_e).flows[0].id = flow_id;
                     ctx.get<TaskFlows>(process_e).flows[0].comm_size = node.comm_size;
@@ -2476,7 +2482,7 @@ inline void flow_receive(Engine &ctx, FlowID &_flow_id, PktBuf &_recv_queue,
                     Entity process_e = ctx.makeEntity<ProcessComm_E>();
                     ctx.get<NpuID>(process_e).value = id.value;
                     ctx.get<NodeID>(process_e).value = node.id;
-                    uint32_t flow_id = processingCommTasks.getTotalFlowCount() + 1;
+                    uint32_t flow_id = processingCommTasks.getTotalFlowCount();
                     ctx.get<TaskFlows>(process_e).flows[0] = SysFlow();
                     ctx.get<TaskFlows>(process_e).flows[0].id = flow_id;
                     ctx.get<TaskFlows>(process_e).flows[0].comm_size = node.comm_size;
@@ -2507,7 +2513,7 @@ inline void flow_receive(Engine &ctx, FlowID &_flow_id, PktBuf &_recv_queue,
                     Entity process_e = ctx.makeEntity<ProcessComm_E>();
                     ctx.get<NpuID>(process_e).value = id.value;
                     ctx.get<NodeID>(process_e).value = node.id;
-                    uint32_t flow_id = processingCommTasks.getTotalFlowCount() + 1;
+                    uint32_t flow_id = processingCommTasks.getTotalFlowCount();
                     ctx.get<TaskFlows>(process_e).flows[0] = SysFlow();
                     ctx.get<TaskFlows>(process_e).flows[0].id = flow_id;
                     ctx.get<TaskFlows>(process_e).flows[0].comm_size = 100000;
@@ -2705,10 +2711,6 @@ void Sim::setupTasks(TaskGraphManager &taskgraph_mgr, const Config &cfg)
                                                                 NpuID, ChakraNodes, HardwareResource, ProcessingCompTask, ProcessingCommTasks>>({sys_init});
 
     // --------------------------------------------------------------------------------
-
-
-
-    // auto comm_sys=builder.addToGraph<ParallelForNode<Engine, tick, CurStep,Results,Results2,SimulationTime,MadronaEventsQueue,MadronaEvents,MadronaEventsResult,ProcessParams>>({});
 
     auto get_flow_sys = builder.addToGraph<ParallelForNode<Engine, comm_set_flow, NET_NPU_ID, NewFlowQueue, \
                                              SimTime, SimTimePerUpdate>>({sys_process_node}); 

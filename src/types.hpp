@@ -1200,6 +1200,9 @@ struct Topo {
     struct ProcessingCommTasks
     {
         ProcessingCommTask tasks[MAX_FLOW_PER_NPU];
+
+        int64_t flow_id;
+
         // 默认构造函数
         ProcessingCommTasks()
         {
@@ -1209,18 +1212,22 @@ struct Topo {
             }
         }
 
+        
+
         // 统计所有任务的 flow_count 的总和
-        int getTotalFlowCount() const
+        int getTotalFlowCount() 
         {
-            int totalFlowCount = 0;
-            for (int i = 0; i < MAX_FLOW_PER_NPU; ++i)
-            {
-                if (tasks[i].state != TaskState::INIT)
-                { // 只统计有效任务
-                    totalFlowCount += tasks[i].flow_count;
-                }
-            }
-            return totalFlowCount;
+            // int totalFlowCount = 0;
+            // for (int i = 0; i < MAX_FLOW_PER_NPU; ++i)
+            // {
+            //     if (tasks[i].state != TaskState::INIT)
+            //     { // 只统计有效任务
+            //         totalFlowCount += tasks[i].flow_count;
+            //     }
+            // }
+            // return totalFlowCount;
+            flow_id+=1;
+            return flow_id;
         }
 
         // 判断是否存在指定节点 ID 的方法
