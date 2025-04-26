@@ -9,15 +9,21 @@ using namespace madrona;
 using namespace madrona::math;
 using namespace madrona::phys;
 
-#define PRINT_PKT_LOG 1
+#define PRINT_PKT_LOG 0
+#define PRINT_PKT_DATA_LOG false
+
 // #define PRINT_SYS_LOG 1
 // #define PRINT_CC_LOG 1
 
 #define SYS_LOG true
 
-#define SYS_CHECK true
+#define SYS_CHECK false
 
 #define ENABLE_TEST false
+
+#define MAX_MODE_16_LIMIT true
+
+
 
 namespace RenderingSystem = madrona::render::RenderingSystem;
 
@@ -904,7 +910,7 @@ inline int checkFlowFinish(Engine &ctx, uint32_t net_npu_id, SysFlow flows_finis
         flows_finish[i].comm_dst = flow_event.dst;
         flows_finish[i].durationMicros = flow_event.stop_time - flow_event.start_time;
         flows_finish[i].state=TaskState::FINISH;
-        printf("check flow finish: flow id %d: %d->%d %d, \n",flows_finish[i].id, flows_finish[i].comm_src,flows_finish[i].comm_dst,flows_finish[i].comm_size);
+        printf("######### check flow finish: flow id %d: %d->%d %d, #########\n",flows_finish[i].id, flows_finish[i].comm_src,flows_finish[i].comm_dst,flows_finish[i].comm_size);
     }
 
     return flow_num_finish;
@@ -1884,7 +1890,7 @@ inline void nic_receive(Engine &ctx, NIC_ID &_nic_id,
         // PrintPkt(pkt, "nic receive buffer");
         // recv flow entity
         Entity recv_flow = Entity::none();
-        if (pkt.pkt_type == PktType::DATA) {
+        if (pkt.pkt_type == PktType::DATA && PRINT_PKT_DATA_LOG) {
             printf("data packet: pkt.src: %d, pkt.dst: %d, pkt.flow_id: %d\n", pkt.src, pkt.dst, pkt.flow_id);
             recv_flow = ctx.data().recv_flows[pkt.dst][pkt.flow_id];
         }
@@ -2359,6 +2365,7 @@ inline void flow_receive(Engine &ctx, FlowID &_flow_id, PktBuf &_recv_queue,
             ctx.get<HardwareResource>(npuNode) = HardwareResource();
             ctx.get<ProcessingCompTask>(npuNode) = ProcessingCompTask();
             ctx.get<ProcessingCommTasks>(npuNode) = ProcessingCommTasks();
+            ctx.get<ProcessingCommTasks>(npuNode).flow_id = i *FLOW_ID_MAX_LENGTH;
             // ctx.get<Entity>(npuNode) = npuNode;
 
             printf("npu %d: turn %d nodes.\n", i, nodeCount);
@@ -2461,8 +2468,21 @@ inline void flow_receive(Engine &ctx, FlowID &_flow_id, PktBuf &_recv_queue,
                     ctx.get<TaskFlows>(process_e).flows[0].is_send = true;
 
                     ctx.data().node_flows_exec_entity[id.value][node.id]= process_e;
-                    // setFlow(Engine &ctx, uint64_t comm_src, uint64_t comm_dst, uint64_t comm_size, uint32_t flow_id)
-                    setFlow(ctx, node.comm_src, node.comm_dst, node.comm_size, flow_id);
+                    uint64_t src=node.comm_src;
+                    uint64_t dst=node.comm_dst;
+                    if(MAX_MODE_16_LIMIT)
+                    {
+                        if(src>15)
+                        {
+                            src=0;
+                        }
+                        if(dst>15)
+                        {
+                            dst=15;
+                        }
+                    }
+
+                    setFlow(ctx, src, dst, node.comm_size, flow_id);
 
                     break;
                 }
@@ -2493,7 +2513,21 @@ inline void flow_receive(Engine &ctx, FlowID &_flow_id, PktBuf &_recv_queue,
 
                     ctx.data().node_flows_exec_entity[id.value][node.id]= process_e;
                     // setFlow(Engine &ctx, uint64_t comm_src, uint64_t comm_dst, uint64_t comm_size, uint32_t flow_id)
-                    setFlow(ctx, node.comm_src, node.comm_dst, node.comm_size, flow_id);
+                    uint64_t src=node.comm_src;
+                    uint64_t dst=node.comm_dst;
+                    if(MAX_MODE_16_LIMIT)
+                    {
+                        if(src>15)
+                        {
+                            src=0;
+                        }
+                        if(dst>15)
+                        {
+                            dst=15;
+                        }
+                    }
+
+                    setFlow(ctx, src, dst, node.comm_size, flow_id);
 
                     break;
                 }
@@ -2704,16 +2738,16 @@ void Sim::setupTasks(TaskGraphManager &taskgraph_mgr, const Config &cfg)
 
 
     // ------------------sys--------------------------------------------------------------
-    // TaskGraphBuilder &builder = taskgraph_mgr.init(0);
-    auto sys_init = builder.addToGraph<ParallelForNode<Engine, init,
-                                                        ChakraNodesData>>({});
-    auto sys_process_node = builder.addToGraph<ParallelForNode<Engine, processNpuNodes,
-                                                                NpuID, ChakraNodes, HardwareResource, ProcessingCompTask, ProcessingCommTasks>>({sys_init});
+
+    // auto sys_init = builder.addToGraph<ParallelForNode<Engine, init,
+    //                                                     ChakraNodesData>>({});
+    // auto sys_process_node = builder.addToGraph<ParallelForNode<Engine, processNpuNodes,
+    //                                                             NpuID, ChakraNodes, HardwareResource, ProcessingCompTask, ProcessingCommTasks>>({sys_init});
 
     // --------------------------------------------------------------------------------
 
     auto get_flow_sys = builder.addToGraph<ParallelForNode<Engine, comm_set_flow, NET_NPU_ID, NewFlowQueue, \
-                                             SimTime, SimTimePerUpdate>>({sys_process_node}); 
+                                             SimTime, SimTimePerUpdate>>({}); 
 
     auto setup_flow_sys = builder.addToGraph<ParallelForNode<Engine, setup_flow, NET_NPU_ID, NewFlowQueue, \
     SimTime, SimTimePerUpdate>>({get_flow_sys}); 
@@ -2767,19 +2801,14 @@ void Sim::setupTasks(TaskGraphManager &taskgraph_mgr, const Config &cfg)
 
 
 
-
-
     // ------------------sys--------------------------------------------------------------
-    auto sys_process_comm = builder.addToGraph<ParallelForNode<Engine, processCommCheckFlow,
-                                                                NpuID, NodeID, TaskFlows>>({transmit_sys});
+    // auto sys_process_comm = builder.addToGraph<ParallelForNode<Engine, processCommCheckFlow,
+    //                                                             NpuID, NodeID, TaskFlows>>({transmit_sys});
     
-    auto sys_remove_node=builder.addToGraph<ParallelForNode<Engine, removeNpuNodes,
-    NpuID, ChakraNodes, HardwareResource, ProcessingCompTask, ProcessingCommTasks>>({sys_process_comm});
+    // auto sys_remove_node=builder.addToGraph<ParallelForNode<Engine, removeNpuNodes,
+    // NpuID, ChakraNodes, HardwareResource, ProcessingCompTask, ProcessingCommTasks>>({sys_process_comm});
     
-    auto sys_skip_time = builder.addToGraph<ParallelForNode<Engine, checkSkipTime, NextProcessTimes>>({sys_remove_node});
-
-    // auto sys_process_time = builder.addToGraph<ParallelForNode<Engine, procssTime,
-    //                                                             SimTime>>({sys_skip_time});
+    // auto sys_skip_time = builder.addToGraph<ParallelForNode<Engine, checkSkipTime, NextProcessTimes>>({sys_remove_node});
 
     // -----------------------------------------------------------------------------------
     

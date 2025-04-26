@@ -942,6 +942,9 @@ struct Topo {
 // 每个comm节点的最大通讯量
 #define MAX_FLOW_NUM_PER_COMM_NODE 999
 
+// 每个节点的流序号区间
+#define FLOW_ID_MAX_LENGTH 5000
+
 // #define MAX_FLOW_NUM_ALL_COMM_NODE 9999
 
     struct NpuID
