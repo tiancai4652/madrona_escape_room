@@ -198,7 +198,7 @@ def tensor_to_ints(tensor):
      encoded = tensor.cpu().numpy().tolist() 
      return encoded
 
-folder_path = '/home/zhangran/work/madrona2/guifei/GAND4LLM/scripts/input'
+folder_path = '/home/zhangran/work/madrona2/madrona_escape_room/scripts/input'
 data=folder_to_int_array(folder_path)
 data_tensor=ints_to_tensor(data)
 int_tensor=tensor_to_ints(sim.chakra_nodes_data_tensor().to_torch())

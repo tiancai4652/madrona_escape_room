@@ -9,8 +9,8 @@ using namespace madrona;
 using namespace madrona::math;
 using namespace madrona::phys;
 
-#define PRINT_PKT_LOG 0
-#define PRINT_PKT_DATA_LOG false
+#define PRINT_PKT_LOG 1
+
 
 // #define PRINT_SYS_LOG 1
 // #define PRINT_CC_LOG 1
@@ -952,6 +952,7 @@ inline void setup_flow(Engine &ctx, NET_NPU_ID _net_npu_id,
 inline void check_flow_state(Engine &ctx, NET_NPU_ID &_net_npu_id, CompletedFlowQueue &_completed_flow_queue,
                              SimTime &_sim_time, SimTimePerUpdate &_sim_time_per_update) {
 
+    // printf("xx1\n");
     
     #if PRINT_SYS_LOG
     if (_net_npu_id.net_npu_id == 0||_net_npu_id.net_npu_id == 1) {// printf("*********Enter into check_flow_state:*********\n");}
@@ -1021,6 +1022,7 @@ inline void check_flow_state(Engine &ctx, NET_NPU_ID &_net_npu_id, CompletedFlow
     // printf("check_flow_state: before clear_queue: _completed_flow_queue: %d\n", get_queue_len(_completed_flow_queue));
     clear_queue(_completed_flow_queue);
     // printf("check_flow_state: after clear_queue: _completed_flow_queue: %d\n", get_queue_len(_completed_flow_queue));
+    // printf("xx2\n");
 }
 
 
@@ -1890,7 +1892,7 @@ inline void nic_receive(Engine &ctx, NIC_ID &_nic_id,
         // PrintPkt(pkt, "nic receive buffer");
         // recv flow entity
         Entity recv_flow = Entity::none();
-        if (pkt.pkt_type == PktType::DATA && PRINT_PKT_DATA_LOG) {
+        if (pkt.pkt_type == PktType::DATA ) {
             printf("data packet: pkt.src: %d, pkt.dst: %d, pkt.flow_id: %d\n", pkt.src, pkt.dst, pkt.flow_id);
             recv_flow = ctx.data().recv_flows[pkt.dst][pkt.flow_id];
         }
@@ -2550,7 +2552,7 @@ inline void flow_receive(Engine &ctx, FlowID &_flow_id, PktBuf &_recv_queue,
                     uint32_t flow_id = processingCommTasks.getTotalFlowCount();
                     ctx.get<TaskFlows>(process_e).flows[0] = SysFlow();
                     ctx.get<TaskFlows>(process_e).flows[0].id = flow_id;
-                    ctx.get<TaskFlows>(process_e).flows[0].comm_size = 100000;
+                    ctx.get<TaskFlows>(process_e).flows[0].comm_size = 1000;
                     ctx.get<TaskFlows>(process_e).flows[0].comm_src = 0;
                     ctx.get<TaskFlows>(process_e).flows[0].comm_dst = 1;
                     ctx.get<TaskFlows>(process_e).flows[0].state = TaskState::START;
@@ -2561,7 +2563,7 @@ inline void flow_receive(Engine &ctx, FlowID &_flow_id, PktBuf &_recv_queue,
 
 
                     // setFlow(Engine &ctx, uint64_t comm_src, uint64_t comm_dst, uint64_t comm_size, uint32_t flow_id)
-                    setFlow(ctx, 0, 1, 100000, flow_id);
+                    setFlow(ctx, 0, 1, 1000, flow_id);
                     break;
                 }
                 default:
@@ -2797,8 +2799,7 @@ void Sim::setupTasks(TaskGraphManager &taskgraph_mgr, const Config &cfg)
 
     auto transmit_sys = builder.addToGraph<ParallelForNode<Engine, transmit, SchedTrajType, \
     PortType, LocalPortID, GlobalPortID, SwitchID, NextHop, NextHopType, PktQueue, TXHistory, \
-    SSLinkDelay, LinkRate, SimTime, SimTimePerUpdate, Seed>>({remove_pkts_sys});                    
-
+    SSLinkDelay, LinkRate, SimTime, SimTimePerUpdate, Seed>>({remove_pkts_sys});       
 
 
     // ------------------sys--------------------------------------------------------------
