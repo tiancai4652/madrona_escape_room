@@ -201,8 +201,8 @@ def tensor_to_ints(tensor):
 folder_path = '/home/zhangran/work/madrona2/guifei/GAND4LLM/scripts/input'
 data=folder_to_int_array(folder_path)
 data_tensor=ints_to_tensor(data)
-int_tensor=tensor_to_ints(sim.chakra_nodes_data)
-sim.chakra_nodes_data.copy_(data_tensor)
+int_tensor=tensor_to_ints(sim.chakra_nodes_data_tensor().to_torch())
+sim.chakra_nodes_data_tensor().to_torch().copy_(data_tensor)
 
 
 # ----------------------------------------------------------
