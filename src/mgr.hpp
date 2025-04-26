@@ -1,9 +1,14 @@
+#pragma once
+
 #include <memory>
 
 #include <madrona/py/utils.hpp>
 #include <madrona/exec_mode.hpp>
 
 #include <madrona/render/render_mgr.hpp>
+//
+#include "types.hpp"
+
 
 namespace madEscape {
 
@@ -13,6 +18,8 @@ namespace madEscape {
 // Manager is responsible for initializing the simulator, loading physics
 // and rendering assets off disk, and mapping ECS components to tensors
 // for learning
+
+
 class Manager {
 public:
     struct Config {
@@ -26,6 +33,10 @@ public:
         uint32_t batchRenderViewHeight = 64;
         madrona::render::APIBackend *extRenderAPI = nullptr;
         madrona::render::GPUDevice *extRenderDev = nullptr;
+        uint32_t kAray; // fei add in 20241215
+        uint32_t ccMethod; // fei add in 20241215
+        Topo topo;
+        uint32_t **Links; // Change from fixed-size array to pointer
     };
 
     Manager(const Config &cfg);
@@ -47,6 +58,16 @@ public:
     madrona::py::Tensor stepsRemainingTensor() const;
     madrona::py::Tensor rgbTensor() const;
     madrona::py::Tensor depthTensor() const;
+
+    madrona::py::Tensor resultsTensor() const;
+    madrona::py::Tensor results2Tensor() const;
+    madrona::py::Tensor madronaEventsTensor() const;
+    madrona::py::Tensor simulationTimeTensor() const;
+    madrona::py::Tensor madronaEventsResultTensor() const;
+    madrona::py::Tensor processParamsTensor() const;
+
+    madrona::py::Tensor chakraNodesDataTensor() const;
+
 
     // These functions are used by the viewer to control the simulation
     // with keyboard inputs in place of DNN policy actions

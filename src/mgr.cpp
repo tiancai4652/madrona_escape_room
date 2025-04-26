@@ -392,6 +392,14 @@ Manager::Impl * Manager::Impl::init(
     sim_cfg.autoReset = mgr_cfg.autoReset;
     sim_cfg.initRandKey = rand::initKey(mgr_cfg.randSeed);
 
+// //
+    sim_cfg.kAray = mgr_cfg.kAray;
+    sim_cfg.ccMethod = mgr_cfg.ccMethod;
+    sim_cfg.Links = mgr_cfg.Links;
+    
+    sim_cfg.topo = mgr_cfg.topo;
+// //
+
     switch (mgr_cfg.execMode) {
     case ExecMode::CUDA: {
 #ifdef MADRONA_CUDA_SUPPORT
@@ -724,5 +732,54 @@ render::RenderManager & Manager::getRenderManager()
 {
     return *impl_->renderMgr;
 }
+
+
+
+
+//
+Tensor Manager::resultsTensor() const
+{
+    return impl_->exportTensor(ExportID::Results, TensorElementType::Int32,
+        {impl_->cfg.numWorlds, 1});
+}
+
+Tensor Manager::results2Tensor() const
+{
+    return impl_->exportTensor(ExportID::Results2, TensorElementType::Int32,
+        {impl_->cfg.numWorlds, 1000});
+}
+
+Tensor Manager::madronaEventsTensor() const
+{
+    return impl_->exportTensor(ExportID::MadronaEvents, TensorElementType::Int32,
+        {impl_->cfg.numWorlds, 100000});
+}
+
+Tensor Manager::madronaEventsResultTensor() const
+{
+    return impl_->exportTensor(ExportID::MadronaEventsResult, TensorElementType::Int32,
+        {impl_->cfg.numWorlds, 100000});
+}
+
+
+Tensor Manager::simulationTimeTensor() const
+{
+    return impl_->exportTensor(ExportID::SimulationTime, TensorElementType::Int64,
+        {impl_->cfg.numWorlds, 1});
+}
+
+Tensor Manager::processParamsTensor() const
+{
+    return impl_->exportTensor(ExportID::ProcessParams, TensorElementType::Int32,
+        {impl_->cfg.numWorlds, 1000});
+}
+
+Tensor Manager::chakraNodesDataTensor() const
+{
+    return impl_->exportTensor(ExportID::ChakraNodesData, TensorElementType::Int32,
+        {impl_->cfg.numWorlds, 1,10000000 });
+}
+
+// //
 
 }
