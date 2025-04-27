@@ -132,6 +132,7 @@ topo.net_npu_num = 2
 topo.aj_link[0] = [1, 2, 1, 2, 3]
 
 
+
 links = np.zeros((2, 100), dtype=np.uint32)  # Create a 2D NumPy array for Links
 links[0][0] = 5  # Example initialization
 links[1][0] = 10  # Example initialization
